@@ -72,51 +72,36 @@ const members = [
     avatar: '/team/craftbukkit.webp',
     name: '蔡徐坤',
     title: '练习时长两年半',
-    links: [
-      { icon: 'bilibili', link: '/docs/#致谢' }
-    ]
   },
+  
   {
     avatar: '/team/fungus.webp',
     name: '刘华强',
     title: '瓜类鉴别家',
-    links: [
-      { icon: 'github', link: 'https://github.com/Fungus-00' },
-      { icon: 'qq', link: '/docs/#致谢' }
-    ]
   },
+  
   {
     avatar: '/team/ap2000_.webp',
     name: '穿山甲',
     title: '大日本双料高级特工',
-    links: [
-      { icon: 'qq', link: '/docs/#致谢' }
-    ]
   },
+  
   {
     avatar: '/team/techxun.webp',
     name: '马保国',
     title: '70多岁武学大师',
-    links: [
-      { icon: 'qq', link: '/docs/#致谢' }
-    ]
   },
+  
   {
     avatar: '/team/anom.webp',
     name: '老八',
     title: '美食家',
-    links: [
-      { icon: 'github', link: 'https://github.com/Anom71' },
-      { icon: 'qq', link: '/docs/#致谢' }
-    ]
   },
+  
   {
     avatar: '/team/QM_Binyu.webp',
     name: '北极熊',
     title: '秦始皇坐骑',
-    links: [
-      { icon: 'qq', link: '/docs/#致谢' }
-    ]
   },
 ]
 </script>
