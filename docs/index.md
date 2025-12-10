@@ -1,63 +1,104 @@
 ---
+# https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
-  name: "FrostCraft服务器"
-  text: "MC 1.21 全版本生存服"
-  tagline: 服务器地址:orwoe.cn
+  name: "好人服・诺金 (TooBee)"
+  text: "MC 1.21.10 纯生存服\nIP地址:  2ob.top"
+  tagline: "支持Java版与基岩版客户端，无需正版验证\n有白名单，QQ群:  786296062"
+  image:
+    src: /background.webp
+    alt: TooBee 大厅
   actions:
     - theme: brand
-      text: 服务器介绍
-      link: /guide/
+      text: 基本信息
+      link: /docs/
     - theme: alt
-      text: 玩家指南
-      link: /player-guide/
-    - theme: brand
-      text: 加入我们？
-      link: /join/
+      text: 卫星地图
+      link: https://toobee.top/map/
+    - theme: alt
+      text: 监控面板
+      link: https://toobee.top:59527/server/default
+    - theme: alt
+      text: 客户端整合包（尚未更新）
+      link: https://modrinth.com/modpack/toobee-client
 
 features:
-  - title: "🎮 全版本支持"
-    details: 支持 Minecraft 1.21 所有版本，Java版和基岩版均可加入
-  - title: "🛡️ 稳定运营"
-    details: 24/7 不间断运行，专业服务器硬件保障
-  - title: "👥 友好社区"
-    details: 活跃的玩家社区，定期举办活动和比赛
-  - title: "🔧 原创插件"
-    details: 独家开发的功能插件，提升游戏体验
-  - title: "💰 完全免费"
-    details: 无需任何付费，纯公益服务器
-  - title: "📱 便捷管理"
-    details: 支持网页管理面板，随时随地管理游戏
+  - title: 生电
+    icon: 🏭
+    details: 服务端核心为 Fabric，所有特性均遵循原版，完美支持生电
+  - title: 高性能
+    icon: ⚡
+    details: 服务器使用 Intel i9-14900K CPU，且做了大量针对性优化，性能卓越
+  - title: 维护活跃
+    icon: 🛠️
+    details: 服主是专业的模组开发者，维护服务器十分活跃，积极响应玩家诉求
+  - title: 氛围和谐
+    icon: ♥️
+    details: 服内玩家相处和谐友好，所有行为均被永久记录，让熊孩子无处可逃
 ---
----
 
-# 🎥 服务器宣传视频
+<script setup>
+import Basic from './components/Basic.vue'
 
-<div style="text-align: center; margin: 2rem 0;">
-<video 
-  src="/videos/p.mp4" 
-  controls 
-  width="90%"
-  style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);"
-  poster="/images/p.jpg"
->
-  您的浏览器不支持视频标签，请使用现代浏览器访问。
-</video>
-<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-  点击播放按钮观看服务器特色介绍
-</p>
-</div>
+import { VPTeamMembers } from 'vitepress/theme'
 
-# 🎮 快速加入
+const members = [
+  {
+    avatar: '/team/craftbukkit.webp',
+    name: '好人菌 (CraftBukkit)',
+    title: '好人服领袖',
+    links: [
+      { icon: 'qq', link: '/docs/#致谢' }
+    ]
+  },
+  {
+    avatar: '/team/fungus.webp',
+    name: '菌 (Fungus)',
+    title: '服主、主要开发者',
+    links: [
+      { icon: 'github', link: 'https://github.com/Fungus-00' },
+      { icon: 'qq', link: '/docs/#致谢' }
+    ]
+  },
+  {
+    avatar: '/team/ap2000_.webp',
+    name: '鹏 (ap2000_)',
+    title: '服务商',
+    links: [
+      { icon: 'qq', link: '/docs/#致谢' }
+    ]
+  },
+  {
+    avatar: '/team/techxun.webp',
+    name: 'techxun',
+    title: '生电管理员',
+    links: [
+      { icon: 'qq', link: '/docs/#致谢' }
+    ]
+  },
+  {
+    avatar: '/team/anom.webp',
+    name: 'Anom',
+    title: '辅助开发者',
+    links: [
+      { icon: 'github', link: 'https://github.com/Anom71' },
+      { icon: 'qq', link: '/docs/#致谢' }
+    ]
+  },
+  {
+    avatar: '/team/QM_Binyu.webp',
+    name: '秋漠・滨语 (QM_Binyu)',
+    title: '综合管理员',
+    links: [
+      { icon: 'qq', link: '/docs/#致谢' }
+    ]
+  },
+]
+</script>
 
-1. **Java版玩家**：在多人游戏中添加服务器 `orwoe.cn`
-2. **基岩版玩家**：服务器地址 `orwoe.cn`，端口 `19132`
-3. **首次加入**：请先阅读[玩家指南](/player-guide/)
+<Basic />
 
-# 📞 联系我们
+<h2 style="text-align:center; line-height:2.0; font-size:250%;"><b>运 维 团 队</b></h2>
 
-- **QQ群**: 123456789
-- **Discord**: [点击加入](https://discord.gg/example)
-- **官方网站**: https://frostcraft.example.com
-
+<VPTeamMembers size="medium" :members="members" />
