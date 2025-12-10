@@ -7,7 +7,7 @@ hero:
   tagline: 服务器地址:orwoe.cn
   actions:
     - theme: brand
-      text: 服务器介绍
+      text: 服务器0909介绍
       link: /guide/
     - theme: alt
       text: 玩家指南
