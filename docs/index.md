@@ -70,16 +70,16 @@ import { VPTeamMembers } from 'vitepress/theme'
 const members = [
   {
     avatar: '/team/craftbukkit.webp',
-    name: '好人菌 (CraftBukkit)',
-    title: '好人服领袖',
+    name: '蔡徐坤',
+    title: '练习时长两年半',
     links: [
-      { icon: 'qq', link: '/docs/#致谢' }
+      { icon: 'bilibili', link: '/docs/#致谢' }
     ]
   },
   {
     avatar: '/team/fungus.webp',
-    name: '菌 (Fungus)',
-    title: '服主、主要开发者',
+    name: '刘华强',
+    title: '瓜类鉴别家',
     links: [
       { icon: 'github', link: 'https://github.com/Fungus-00' },
       { icon: 'qq', link: '/docs/#致谢' }
@@ -87,24 +87,24 @@ const members = [
   },
   {
     avatar: '/team/ap2000_.webp',
-    name: '鹏 (ap2000_)',
-    title: '服务商',
+    name: '穿山甲',
+    title: '大日本双料高级特工',
     links: [
       { icon: 'qq', link: '/docs/#致谢' }
     ]
   },
   {
     avatar: '/team/techxun.webp',
-    name: 'techxun',
-    title: '生电管理员',
+    name: '马保国',
+    title: '70多岁武学大师',
     links: [
       { icon: 'qq', link: '/docs/#致谢' }
     ]
   },
   {
     avatar: '/team/anom.webp',
-    name: 'Anom',
-    title: '辅助开发者',
+    name: '老八',
+    title: '美食家',
     links: [
       { icon: 'github', link: 'https://github.com/Anom71' },
       { icon: 'qq', link: '/docs/#致谢' }
@@ -112,8 +112,8 @@ const members = [
   },
   {
     avatar: '/team/QM_Binyu.webp',
-    name: '秋漠・滨语 (QM_Binyu)',
-    title: '综合管理员',
+    name: '北极熊',
+    title: '秦始皇坐骑',
     links: [
       { icon: 'qq', link: '/docs/#致谢' }
     ]
