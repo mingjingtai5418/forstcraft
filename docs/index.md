@@ -13,7 +13,7 @@ hero:
       text: 玩家指南
       link: /player-guide/
     - theme: brand
-      text: 加入我们
+      text: 加入我们？
       link: /join/
 
 features:
