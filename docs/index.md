@@ -69,19 +69,19 @@ import { VPTeamMembers } from 'vitepress/theme'
 
 const members = [
   {
-    avatar: '/team/craftbukkit.webp',
+    avatar: '/team/caixukun.jpg',
     name: '蔡徐坤',
     title: '练习时长两年半',
   },
   
   {
-    avatar: '/team/fungus.webp',
+    avatar: '/team/R.jpg',
     name: '刘华强',
     title: '瓜类鉴别家',
   },
   
   {
-    avatar: '/team/ap2000_.webp',
+    avatar: '/team/OIP.jpg',
     name: '穿山甲',
     title: '大日本双料高级特工',
   },
