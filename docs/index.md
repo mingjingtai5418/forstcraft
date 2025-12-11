@@ -13,8 +13,8 @@ hero:
       text: 卫星地图
       link: http://map.orwoe.cn/
     - theme: brand
-      text: 加入我们？
-      link: /join/
+      text: 检控面板
+      link: http://plan.orwoe.cn/
       
 features:
   - title: "🎮 全版本支持"
