@@ -10,8 +10,8 @@ hero:
       text: 服务器介绍
       link: /guide/
     - theme: alt
-      text: 玩家指南
-      link: /player-guide/
+      text: 卫星地图
+      link: http://map.orwoe.cn/
     - theme: brand
       text: 加入我们？
       link: /join/
