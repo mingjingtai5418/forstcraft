@@ -15,7 +15,7 @@ hero:
     - theme: brand
       text: 加入我们？
       link: /join/
-#wocaonima
+      
 features:
   - title: "🎮 全版本支持"
     details: 支持 Minecraft 1.21 所有版本，Java版和基岩版均可加入
