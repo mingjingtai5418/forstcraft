@@ -32,25 +32,26 @@ jobs:
       - name: Build project
         run: npm run docs:build
       
-      # 步骤 5：安装 rsync
-      - name: Install rsync
-        run: sudo apt-get update && sudo apt-get install -y rsync
-      
-      # 步骤 6：部署到服务器
+      # 步骤 5：部署到服务器
       - name: Deploy to server
-        uses: easingthemes/ssh-deploy@v2
-        with:
-          SSH_PRIVATE_KEY: |
-            -----BEGIN OPENSSH PRIVATE KEY-----
-            b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-            QyNTUxOQAAACDXBvBFkes2mIinicovMSNCUktM8icSXm5IDQp8a0F9RQAAAJgaUx4OGlMe
-            DgAAAAtzc2gtZWQyNTUxOQAAACDXBvBFkes2mIinicovMSNCUktM8icSXm5IDQp8a0F9RQ
-            AAAEBJfi+qgB7D0Zq9ZN9MR6w0yqoOI8uvEmEXG55yzHuUGNcG8EWR6zaYiKeJyi8xI0JS
-            S0zyJxJebkgNCnxrQX1FAAAAFXJvb3RAUmFpbll1bi1kOXFHTHlkaQ==
-            -----END OPENSSH PRIVATE KEY-----
-          ARGS: '-rltgoDzvO --delete'  # rsync 参数
-          SOURCE: 'docs/.vitepress/dist/'  # 源目录
-          REMOTE_HOST: '154.12.39.199'  # 服务器 IP 或域名
-          REMOTE_USER: 'root'  # 服务器用户名
-          REMOTE_PORT: '22'  # SSH 端口
-          TARGET: '/www/wwwroot/154.12.39.199_1256'  # 服务器目标目录
+        run: |
+          # 创建 SSH 私钥文件
+          echo "-----BEGIN OPENSSH PRIVATE KEY-----
+          b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+          QyNTUxOQAAACDXBvBFkes2mIinicovMSNCUktM8icSXm5IDQp8a0F9RQAAAJgaUx4OGlMe
+          DgAAAAtzc2gtZWQyNTUxOQAAACDXBvBFkes2mIinicovMSNCUktM8icSXm5IDQp8a0F9RQ
+          AAAEBJfi+qgB7D0Zq9ZN9MR6w0yqoOI8uvEmEXG55yzHuUGNcG8EWR6zaYiKeJyi8xI0JS
+          S0zyJxJebkgNCnxrQX1FAAAAFXJvb3RAUmFpbll1bi1kOXFHTHlkaQ==
+          -----END OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa
+          
+          # 设置私钥权限
+          chmod 600 ~/.ssh/id_rsa
+          
+          # 添加服务器到 known_hosts
+          ssh-keyscan -H 154.12.39.199 >> ~/.ssh/known_hosts
+          
+          # 安装 rsync
+          sudo apt-get update && sudo apt-get install -y rsync
+          
+          # 部署文件
+          rsync -rltgoDzvO --delete docs/.vitepress/dist/ root@154.12.39.199:/www/wwwroot/154.12.39.199_1256
