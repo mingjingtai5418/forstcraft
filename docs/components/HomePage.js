@@ -7,37 +7,69 @@ class WebSocketManager {
     this.listeners = new Array(4);
     this.time = 0n;
     this.buf = new ArrayBuffer(12);
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 3;
   }
 
   connect() {
     if (this.ws)
       this.ws.close();
-    const ws = new WebSocket(this.url);
-    ws.binaryType = "arraybuffer";
-
-    ws.onopen = () => {
-      this.intervalId = setInterval(() => {
-        this.sendMessage(0);
-      }, 20000);
-    };
-
-    ws.onmessage = (event) => {
-      const data = event.data;
-      const all = new DataView(data);
-      this.listeners[all.getInt32(8)](all.getBigInt64(), new DataView(data, 12))
-    };
-
-    ws.onclose = () => {
-      this.listeners = null;
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+      
+    // 检查 listeners 是否已初始化
+    if (!this.listeners) {
+      this.listeners = new Array(4);
+    }
     
-    this.ws = ws;
+    try {
+      const ws = new WebSocket(this.url);
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        this.reconnectAttempts = 0;
+        this.intervalId = setInterval(() => {
+          this.sendMessage(0);
+        }, 20000);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = event.data;
+          const all = new DataView(data);
+          const listener = this.listeners[all.getInt32(8)];
+          if (listener) {
+            listener(all.getBigInt64(), new DataView(data, 12));
+          }
+        } catch (error) {
+          console.error('WebSocket message error:', error);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed');
+        this.listeners = null;
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+        
+        // 尝试重新连接，最多尝试 3 次
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+          setTimeout(() => {
+            this.connect();
+          }, 5000);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.warn('WebSocket connection error (expected in preview mode):', error.message);
+        // 不抛出错误，避免影响页面显示
+      };
+      
+      this.ws = ws;
+    } catch (error) {
+      console.warn('Failed to create WebSocket connection (expected in preview mode):', error.message);
+    }
   }
   
   sendMessage(type, time = this.time) {

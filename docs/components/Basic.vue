@@ -60,6 +60,7 @@ export default {
         LOADING: 0,
         ONLINE: 1,
         OFFLINE: 2,
+        ERROR: 3, // 添加错误状态
       },
 
       basic: null as BasicInfo | null,
@@ -70,6 +71,7 @@ export default {
       intervalId: null,
       tick: 0,
       mark: 0,
+      errorMessage: '', // 添加错误信息
     };
   },
 
@@ -139,12 +141,22 @@ export default {
   },
 
   mounted() {
-    wsMan.setUrl(window.location);
-    wsMan.addListener(0, this.handleOffline);
-    wsMan.addListener(1, this.handleBasicInfo);
-    wsMan.addListener(2, this.handlePlayerInfo);
-    wsMan.connect();
-    this.intervalId = setInterval(this.tickBasic, 100);
+    // 检查是否为开发/预览模式
+    const isPreviewMode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (!isPreviewMode) {
+      // 只在生产环境中连接 WebSocket
+      wsMan.setUrl(window.location);
+      wsMan.addListener(0, this.handleOffline);
+      wsMan.addListener(1, this.handleBasicInfo);
+      wsMan.addListener(2, this.handlePlayerInfo);
+      wsMan.connect();
+      this.intervalId = setInterval(this.tickBasic, 100);
+    } else {
+      console.log('WebSocket connection disabled in preview mode');
+      // 在预览模式下设置为离线状态
+      this.mark = this.Mark.OFFLINE;
+    }
   },
   
   beforeDestroy() { this.clear(); }

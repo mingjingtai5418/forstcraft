@@ -17,33 +17,10 @@ export default {
         link: '/guide/'
       },
       {
-        text: 'API 示例',
-        link: '/api-examples/'
-      },
-      {
-        text: 'Markdown 示例',
-        link: '/markdown-examples/'
+        text: '成员介绍',
+        link: '/members/'
       }
     ],
-    sidebar: {
-      '/': [
-        {
-          text: '首页',
-          link: '/'
-        },
-        {
-          text: '指南',
-          link: '/guide/'
-        },
-        {
-          text: 'API 示例',
-          link: '/api-examples/'
-        },
-        {
-          text: 'Markdown 示例',
-          link: '/markdown-examples/'
-        }
-      ]
-    }
+    sidebar: false
   }
 }

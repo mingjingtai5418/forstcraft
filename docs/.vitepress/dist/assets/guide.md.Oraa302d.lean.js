@@ -1,0 +1,1 @@
+import{_ as t,c as a,o as r,j as o}from"./chunks/framework.DiVQWqr_.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"guide.md","filePath":"guide.md"}'),s={name:"guide.md"};function n(d,e,i,c,p,l){return r(),a("div",null,[...e[0]||(e[0]=[o("p",null,"此处应该有内容",-1)])])}const _=t(s,[["render",n]]);export{m as __pageData,_ as default};
