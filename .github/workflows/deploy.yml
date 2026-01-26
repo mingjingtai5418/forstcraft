@@ -1,0 +1,45 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # 监听 main 分支的推送
+  pull_request:
+    branches:
+      - main  # 可选：监听 PR 以测试构建
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 步骤 1：检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      # 步骤 2：设置 Node.js 环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # 使用 Node.js 18
+          cache: 'npm'  # 缓存 npm 依赖
+      
+      # 步骤 3：安装依赖
+      - name: Install dependencies
+        run: npm install
+      
+      # 步骤 4：构建项目
+      - name: Build project
+        run: npm run docs:build
+      
+      # 步骤 5：部署到服务器
+      - name: Deploy to server
+        uses: easingthemes/ssh-deploy@v2
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # 服务器 SSH 私钥
+          ARGS: '-rltgoDzvO --delete'  # rsync 参数
+          SOURCE: 'docs/.vitepress/dist/'  # 源目录
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}  # 服务器 IP 或域名
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}  # 服务器用户名
+          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}  # SSH 端口（可选，默认 22）
+          TARGET: ${{ secrets.REMOTE_TARGET }}  # 服务器目标目录

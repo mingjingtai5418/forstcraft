@@ -1,6 +1,7 @@
 export default {
   title: 'FrostCraft服务器',
   description: 'Minecraft 1.21 全版本生存服',
+  ignoreDeadLinks: true,
   server: {
     allowedHosts: ['f.jingyucloud.cn']
   },
