@@ -69,38 +69,38 @@ import { VPTeamMembers } from 'vitepress/theme'
 
 const members = [
   {
-    avatar: '/team/caixukun.jpg',
-    name: '蔡徐坤',
+    avatar: '/team/MY.jpg',
+    name: 'MGyue_',
     title: '练习时长两年半',
   },
   
   {
-    avatar: '/team/R.jpg',
-    name: '刘华强',
+    avatar: '/team/LU.jpg',
+    name: 'lullaby_ouo',
     title: '瓜类鉴别家',
   },
   
   {
-    avatar: '/team/OIP.jpg',
-    name: '穿山甲',
+    avatar: '/team/YUS.jpg',
+    name: 'Y_u_S',
     title: '大日本双料高级特工',
   },
   
   {
-    avatar: '/team/techxun.webp',
-    name: '马保国',
+    avatar: '/team/b_29eeeQC.jpg',
+    name: 'QQCCQQLLQQ',
     title: '70多岁武学大师',
   },
   
   {
-    avatar: '/team/anom.webp',
-    name: '老八',
+    avatar: '/team/FU.jpg',
+    name: 'fusces_',
     title: '美食家',
   },
   
   {
-    avatar: '/team/QM_Binyu.webp',
-    name: '北极熊',
+    avatar: '/team/xiaobai.jpg',
+    name: 'xiaobai23345',
     title: '秦始皇坐骑',
   },
 ]

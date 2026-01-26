@@ -1,11 +1,14 @@
 {
   "scripts": {
-    "docs:dev": "vitepress dev doc",
-    "docs:build": "vitepress build doc",
-    "docs:preview": "vitepress preview doc"
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "install:linux": "npm install --no-optional"
   },
   "devDependencies": {
     "vitepress": "^2.0.0-alpha.15"
+  },
+  "resolutions": {
+    "rollup": "^4.0.0"
   }
-  
 }
