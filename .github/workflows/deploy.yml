@@ -1,12 +1,9 @@
-name: Deploy to Server
+name: Deploy to Baota Server
 
 on:
   push:
     branches:
       - main  # 监听 main 分支的推送
-  pull_request:
-    branches:
-      - main  # 可选：监听 PR 以测试构建
 
 jobs:
   deploy:
@@ -16,7 +13,9 @@ jobs:
       # 步骤 1：检出代码
       - name: Checkout code
         uses: actions/checkout@v3
-        
+        with:
+          fetch-depth: 0
+      
       # 步骤 2：设置 Node.js 环境
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -27,14 +26,19 @@ jobs:
       # 步骤 3：安装依赖
       - name: Install dependencies
         run: npm install
-      
+        
       # 步骤 4：构建项目
       - name: Build project
         run: npm run docs:build
       
-      # 步骤 5：部署到服务器
-      - name: Deploy to server
+      # 步骤 5：部署到宝塔服务器
+      - name: Deploy to Baota server
         run: |
+          echo "=== 开始部署到宝塔服务器 ==="
+          
+          # 配置 SSH
+          mkdir -p ~/.ssh
+          
           # 创建 SSH 私钥文件
           echo "-----BEGIN OPENSSH PRIVATE KEY-----
           b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
@@ -47,11 +51,38 @@ jobs:
           # 设置私钥权限
           chmod 600 ~/.ssh/id_rsa
           
-          # 添加服务器到 known_hosts
-          ssh-keyscan -H 154.12.39.199 >> ~/.ssh/known_hosts
+          # 显示私钥权限（调试用）
+          ls -la ~/.ssh/id_rsa
+          
+          # 添加服务器到 known_hosts，避免首次连接确认
+          echo "=== 添加服务器到 known_hosts ==="
+          ssh-keyscan -H 154.12.39.199 >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # 测试 SSH 连接（调试用）
+          echo "=== 测试 SSH 连接 ==="
+          ssh -o StrictHostKeyChecking=no -o BatchMode=yes root@154.12.39.199 "echo 'SSH 连接成功'" || echo "SSH 连接测试失败，将继续执行部署"
           
           # 安装 rsync
+          echo "=== 安装 rsync ==="
           sudo apt-get update && sudo apt-get install -y rsync
           
-          # 部署文件
-          rsync -rltgoDzvO --delete docs/.vitepress/dist/ root@154.12.39.199:/www/wwwroot/154.12.39.199_1256
+          # 显示构建产物目录（调试用）
+          echo "=== 显示构建产物目录 ==="
+          ls -la docs/.vitepress/dist/
+          
+          # 部署文件到宝塔服务器
+          echo "=== 开始部署文件 ==="
+          rsync -avz --delete --progress docs/.vitepress/dist/ root@154.12.39.199:/www/wwwroot/154.12.39.199_1256/ || {
+            echo "=== 部署失败，尝试使用 scp 替代 ==="
+            scp -r docs/.vitepress/dist/* root@154.12.39.199:/www/wwwroot/154.12.39.199_1256/
+          }
+          
+          # 设置文件权限（宝塔面板推荐权限）
+          echo "=== 设置文件权限 ==="
+          ssh -o StrictHostKeyChecking=no root@154.12.39.199 "chmod -R 755 /www/wwwroot/154.12.39.199_1256/ && chown -R www:www /www/wwwroot/154.12.39.199_1256/"
+          
+          # 显示部署结果（调试用）
+          echo "=== 显示部署结果 ==="
+          ssh -o StrictHostKeyChecking=no root@154.12.39.199 "ls -la /www/wwwroot/154.12.39.199_1256/"
+          
+          echo "=== 部署完成 ==="
