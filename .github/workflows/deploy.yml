@@ -1,4 +1,4 @@
-name: Deploy to Baota
+name: Deploy VitePress to Baota
 
 on:
   push:
@@ -7,25 +7,153 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20.x'
           cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
       
-      - run: npm ci
-      - run: npm run docs:build
+      - name: Install system dependencies (for node-gyp)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3
       
-      - name: Deploy
-        uses: easingthemes/ssh-deploy@v4
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-          REMOTE_USER: ${{ secrets.SERVER_USER }}
-          SOURCE: "docs/.vitepress/dist/"
-          TARGET_DIR: ${{ secrets.TARGET_PATH }}
-          ARGS: "-avz --delete"
-          EXCLUDE: "/node_modules/, /.git/"
+      - name: Install project dependencies
+        run: |
+          # 清理缓存
+          npm cache clean --force
+          # 安装依赖
+          npm ci --no-audit --prefer-offline
+          # 如果需要 crypto polyfill
+          npm install crypto-browserify --save-dev || true
+      
+      - name: Fix crypto issue for VitePress
+        run: |
+          # 方法1：创建环境修复
+          cat > fix-crypto.js << 'EOF'
+          const crypto = require('crypto');
+          
+          if (!globalThis.crypto) {
+            console.log('Injecting crypto polyfill...');
+            
+            if (crypto.webcrypto) {
+              globalThis.crypto = crypto.webcrypto;
+            } else {
+              // 创建简单的 polyfill
+              globalThis.crypto = {
+                getRandomValues: function(buffer) {
+                  return crypto.randomFillSync(buffer);
+                },
+                randomUUID: function() {
+                  return crypto.randomBytes(16).toString('hex');
+                },
+                subtle: {}
+              };
+            }
+          }
+          
+          // 导出给其他模块使用
+          module.exports = globalThis.crypto;
+          EOF
+          
+          # 在构建前预加载修复
+          export NODE_OPTIONS="--require ./fix-crypto.js"
+      
+      - name: Build VitePress
+        run: |
+          # 检查构建目录是否存在
+          if [ -d "docs" ]; then
+            echo "Building VitePress from docs directory..."
+            cd docs
+            npx vitepress build || {
+              echo "第一次构建失败，尝试替代方法..."
+              # 如果使用 npm scripts
+              cd ..
+              npm run docs:build
+            }
+          else
+            echo "直接构建..."
+            npm run docs:build
+          fi
+        env:
+          NODE_OPTIONS: "--require ./fix-crypto.js --max-old-space-size=4096"
+      
+      - name: Verify build output
+        run: |
+          echo "检查构建输出..."
+          if [ -d "docs/.vitepress/dist" ]; then
+            echo "构建成功！文件列表："
+            ls -la docs/.vitepress/dist/
+            echo "文件数量："
+            find docs/.vitepress/dist -type f | wc -l
+          elif [ -d ".vitepress/dist" ]; then
+            echo "构建成功！（在根目录）"
+            ls -la .vitepress/dist/
+          else
+            echo "错误：找不到构建输出目录"
+            ls -la docs/ || ls -la ./
+            exit 1
+          fi
+      
+      - name: Setup SSH for deployment
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # 验证私钥格式
+          ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null || echo "私钥格式检查跳过"
+          
+          # 添加 known_hosts
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+      
+      - name: Deploy to Baota Server
+        run: |
+          # 确定源目录
+          if [ -d "docs/.vitepress/dist" ]; then
+            SOURCE_DIR="docs/.vitepress/dist/"
+          elif [ -d ".vitepress/dist" ]; then
+            SOURCE_DIR=".vitepress/dist/"
+          else
+            echo "错误：找不到构建输出"
+            exit 1
+          fi
+          
+          echo "从目录同步: $SOURCE_DIR"
+          echo "同步到: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_PATH }}"
+          
+          # 使用 rsync 部署
+          rsync -avz \
+            --delete \
+            --progress \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
+            "$SOURCE_DIR" \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_PATH }}
+          
+          echo "✅ 文件同步完成"
+      
+      - name: Set Baota permissions
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_rsa \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "chown -R www:www ${{ secrets.TARGET_PATH }} && \
+               chmod -R 755 ${{ secrets.TARGET_PATH }} && \
+               echo '权限设置完成'"
+      
+      - name: Verify deployment
+        run: |
+          echo "验证服务器上的部署..."
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_rsa \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "ls -la ${{ secrets.TARGET_PATH }} | head -10 && \
+               echo '部署验证完成！'"
