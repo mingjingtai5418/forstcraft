@@ -104,28 +104,29 @@ jobs:
           ls -la docs/.vitepress/dist/
           
           # 使用 rsync 部署到服务器
-          # 注意：需要在 GitHub Secrets 中配置 SERVER_SSH_KEY, SERVER_USER, SERVER_HOST, SERVER_PATH
+          # 注意：需要在 GitHub Secrets 中配置 SERVER_SSH_KEY, SERVER_USER, SERVER_HOST, SERVER_PORT, TARGET_PATH
           
           # 调试信息
           echo "检查 Secrets 配置..."
           echo "SERVER_SSH_KEY 长度: ${#SERVER_SSH_KEY}"
           echo "SERVER_USER: $SERVER_USER"
           echo "SERVER_HOST: $SERVER_HOST"
-          echo "SERVER_PATH: $SERVER_PATH"
+          echo "SERVER_PORT: $SERVER_PORT"
+          echo "TARGET_PATH: $TARGET_PATH"
           
           if [ -n "$SERVER_SSH_KEY" ]; then
             # 配置 SSH
             mkdir -p ~/.ssh
             echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
-            ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+            ssh-keyscan -p $SERVER_PORT -H $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
             
             # 部署文件
-            rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" docs/.vitepress/dist/ $SERVER_USER@$SERVER_HOST:$SERVER_PATH
+            rsync -avz --delete -e "ssh -p $SERVER_PORT -o StrictHostKeyChecking=no -o ConnectTimeout=30" docs/.vitepress/dist/ $SERVER_USER@$SERVER_HOST:$TARGET_PATH
             
             if [ $? -eq 0 ]; then
               echo "✅ 部署成功！"
-              echo "文件已同步到：$SERVER_USER@$SERVER_HOST:$SERVER_PATH"
+              echo "文件已同步到：$SERVER_USER@$SERVER_HOST:$TARGET_PATH"
             else
               echo "❌ 部署失败"
               exit 1
@@ -136,7 +137,8 @@ jobs:
             echo "- SERVER_SSH_KEY: SSH私钥"
             echo "- SERVER_USER: 服务器用户名"
             echo "- SERVER_HOST: 服务器地址"
-            echo "- SERVER_PATH: 部署路径 (/www/wwwroot/154.12.39.199_1256)"
+            echo "- SERVER_PORT: 服务器端口"
+            echo "- TARGET_PATH: 部署路径 (/www/wwwroot/154.12.39.199_1256)"
           fi
       
       # 步骤 7：上传构建产物（备份）
