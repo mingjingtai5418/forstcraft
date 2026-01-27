@@ -20,11 +20,22 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
-      # 步骤 3：安装依赖
+      # 步骤 3：清理并安装依赖
       - name: Install dependencies
         run: |
+          # 清理 npm 缓存
           npm cache clean --force
-          npm install
+          
+          # 删除 node_modules 和 lock 文件（如果之前有问题）
+          rm -rf node_modules package-lock.json
+          
+          # 重新安装所有依赖
+          npm install --no-audit --no-fund
+          
+          # 检查 vitepress 是否安装成功
+          echo "检查 vitepress 安装："
+          ls -la node_modules/.bin/vitepress || echo "未找到 vitepress"
+          npx vitepress --version || echo "无法获取版本"
       
       # 步骤 4：修复 crypto 问题
       - name: Fix crypto for VitePress
@@ -44,10 +55,24 @@ jobs:
           # 设置环境变量预加载
           echo "NODE_OPTIONS=--require $(pwd)/crypto-fix.js" >> $GITHUB_ENV
       
-      # 步骤 5：构建项目
+      # 步骤 5：构建项目（使用 npx）
       - name: Build project
         run: |
-          npm run docs:build
+          echo "开始构建 VitePress..."
+          
+          # 方法1：使用 npx
+          npx vitepress build docs || {
+            echo "npx 构建失败，尝试方法2..."
+            # 方法2：直接调用本地安装的 vitepress
+            ./node_modules/.bin/vitepress build docs || {
+              echo "直接调用失败，尝试方法3..."
+              # 方法3：使用 node 运行
+              node node_modules/vitepress/bin/vitepress.js build docs
+            }
+          }
+          
+          echo "构建完成，检查输出目录："
+          ls -la docs/.vitepress/dist/ 2>/dev/null || echo "未找到 dist 目录"
       
       # 步骤 6：配置 SSH 密钥
       - name: Setup SSH
@@ -59,13 +84,19 @@ jobs:
           # 添加服务器到 known_hosts
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
       
-      # 步骤 7：直接部署文件
+      # 步骤 7：部署文件
       - name: Deploy files
         run: |
-          # 使用 rsync 部署（更可靠）
+          # 确保有构建输出
+          if [ ! -d "docs/.vitepress/dist" ]; then
+            echo "错误：未找到构建输出目录"
+            exit 1
+          fi
+          
+          # 使用 rsync 部署
           rsync -avz \
             --delete \
-            -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10" \
+            -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30" \
             docs/.vitepress/dist/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_PATH }}
           
