@@ -88,19 +88,61 @@ jobs:
             echo '<html><body><h1>Built Successfully</h1></body></html>' > docs/.vitepress/dist/index.html
           fi
       
-      # 步骤 6：上传构建产物
-      - name: Upload build artifacts
+      # 步骤 6：部署到服务器
+      - name: Deploy to server
+        run: |
+          echo "=== 开始部署到服务器 ==="
+          
+          # 检查构建目录是否存在
+          if [ ! -d "docs/.vitepress/dist" ]; then
+            echo "❌ 构建目录不存在"
+            exit 1
+          fi
+          
+          # 显示构建文件列表
+          echo "构建文件列表："
+          ls -la docs/.vitepress/dist/
+          
+          # 使用 rsync 部署到服务器
+          # 注意：需要在 GitHub Secrets 中配置 SERVER_SSH_KEY, SERVER_USER, SERVER_HOST, SERVER_PATH
+          if [ -n "$SERVER_SSH_KEY" ]; then
+            # 配置 SSH
+            mkdir -p ~/.ssh
+            echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+            
+            # 部署文件
+            rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" docs/.vitepress/dist/ $SERVER_USER@$SERVER_HOST:$SERVER_PATH
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ 部署成功！"
+              echo "文件已同步到：$SERVER_USER@$SERVER_HOST:$SERVER_PATH"
+            else
+              echo "❌ 部署失败"
+              exit 1
+            fi
+          else
+            echo "⚠️  未配置服务器部署参数，跳过部署步骤"
+            echo "请在 GitHub Secrets 中配置以下参数："
+            echo "- SERVER_SSH_KEY: SSH私钥"
+            echo "- SERVER_USER: 服务器用户名"
+            echo "- SERVER_HOST: 服务器地址"
+            echo "- SERVER_PATH: 部署路径 (/www/wwwroot/154.12.39.199_1256)"
+          fi
+      
+      # 步骤 7：上传构建产物（备份）
+      - name: Upload build artifacts (backup)
         uses: actions/upload-artifact@v4
         with:
           name: vitepress-build
           path: docs/.vitepress/dist/
           retention-days: 7
       
-      # 步骤 7：显示构建信息
+      # 步骤 8：显示构建信息
       - name: Show build info
         run: |
           echo "=== 构建完成 ==="
-          echo "构建产物已上传为 artifacts"
-          echo "请在 GitHub Actions 页面下载构建产物，然后解压到本地路径："
-          echo "e:\\代码开发\\forstcraft\\docs\\.vitepress\\dist"
+          echo "如果配置了服务器参数，文件已部署到服务器"
+          echo "构建产物也已上传为 artifacts 作为备份"
           echo "==================="
