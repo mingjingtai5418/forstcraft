@@ -105,6 +105,14 @@ jobs:
           
           # 使用 rsync 部署到服务器
           # 注意：需要在 GitHub Secrets 中配置 SERVER_SSH_KEY, SERVER_USER, SERVER_HOST, SERVER_PATH
+          
+          # 调试信息
+          echo "检查 Secrets 配置..."
+          echo "SERVER_SSH_KEY 长度: ${#SERVER_SSH_KEY}"
+          echo "SERVER_USER: $SERVER_USER"
+          echo "SERVER_HOST: $SERVER_HOST"
+          echo "SERVER_PATH: $SERVER_PATH"
+          
           if [ -n "$SERVER_SSH_KEY" ]; then
             # 配置 SSH
             mkdir -p ~/.ssh
