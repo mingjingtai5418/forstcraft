@@ -376,7 +376,6 @@
 <img src="/team/MY.jpg" alt="MGyue_" class="gov-avatar">
 </div>
 <h3 class="gov-name">MGyue_</h3>
-<p class="gov-title-text">练习时长两年半</p>
 </div>
 
 <div class="gov-card">
