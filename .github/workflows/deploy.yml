@@ -2,52 +2,85 @@ name: Deploy VitePress to Baota
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main  # 监听 main 分支
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 使用最新 Ubuntu 环境
     
     steps:
-      - name: Checkout code
+      # 步骤1: 检出代码
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # 获取完整历史
       
-      - name: Setup Node.js 20
+      # 步骤2: 设置 Node.js 20 LTS（关键步骤）
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          node-version: '20'  # 使用 Node.js 20 LTS 版本
+          cache: 'npm'  # 缓存 npm 依赖，加速构建
+          cache-dependency-path: '**/package-lock.json'  # 如果有 package-lock.json
       
-      - name: Install system dependencies (for node-gyp)
+      # 步骤3: 验证环境（调试用）
+      - name: Debug environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3
+          echo "=== 环境信息 ==="
+          echo "Node.js 版本: $(node --version)"
+          echo "NPM 版本: $(npm --version)"
+          echo "当前目录: $(pwd)"
+          echo "目录内容:"
+          ls -la
+          
+          # 检查 crypto 支持
+          node -e "
+            console.log('=== Crypto 支持检查 ===');
+            console.log('globalThis.crypto 存在:', 'crypto' in globalThis);
+            console.log('global.crypto 存在:', 'crypto' in global);
+            if ('crypto' in globalThis) {
+              console.log('crypto.getRandomValues 类型:', typeof globalThis.crypto.getRandomValues);
+            }
+          "
       
-      - name: Install project dependencies
+      # 步骤4: 安装依赖
+      - name: Install dependencies
         run: |
-          # 清理缓存
-          npm cache clean --force
-          # 安装依赖
-          npm ci --no-audit --prefer-offline
-          # 如果需要 crypto polyfill
-          npm install crypto-browserify --save-dev || true
+          echo "=== 安装依赖 ==="
+          
+          # 清理可能的缓存
+          npm cache clean --force || true
+          
+          # 使用 npm ci 确保依赖一致性（如果有 package-lock.json）
+          if [ -f "package-lock.json" ]; then
+            echo "使用 npm ci 安装依赖..."
+            npm ci --no-audit --prefer-offline
+          else
+            echo "使用 npm install 安装依赖..."
+            npm install --no-audit
+          fi
+          
+          echo "依赖安装完成"
       
-      - name: Fix crypto issue for VitePress
+      # 步骤5: 修复 crypto 问题（预防性措施）
+      - name: Fix crypto compatibility
         run: |
-          # 方法1：创建环境修复
-          cat > fix-crypto.js << 'EOF'
+          echo "=== 修复 crypto 兼容性 ==="
+          
+          # 创建一个临时修复文件
+          cat > crypto-polyfill.js << 'EOF'
+          // 为 GitHub Actions 环境提供 crypto polyfill
           const crypto = require('crypto');
           
           if (!globalThis.crypto) {
-            console.log('Injecting crypto polyfill...');
+            console.log('注入 crypto polyfill...');
             
             if (crypto.webcrypto) {
+              // 如果 Node.js 有 webcrypto API
               globalThis.crypto = crypto.webcrypto;
             } else {
-              // 创建简单的 polyfill
+              // 简单的 polyfill
               globalThis.crypto = {
                 getRandomValues: function(buffer) {
                   return crypto.randomFillSync(buffer);
@@ -58,102 +91,140 @@ jobs:
                 subtle: {}
               };
             }
+            console.log('crypto polyfill 注入成功');
+          } else {
+            console.log('crypto 已存在，无需注入');
           }
           
           // 导出给其他模块使用
           module.exports = globalThis.crypto;
           EOF
           
-          # 在构建前预加载修复
-          export NODE_OPTIONS="--require ./fix-crypto.js"
+          echo "crypto 修复脚本创建完成"
       
+      # 步骤6: 构建 VitePress 项目
       - name: Build VitePress
         run: |
-          # 检查构建目录是否存在
-          if [ -d "docs" ]; then
-            echo "Building VitePress from docs directory..."
-            cd docs
-            npx vitepress build || {
-              echo "第一次构建失败，尝试替代方法..."
-              # 如果使用 npm scripts
-              cd ..
-              npm run docs:build
-            }
-          else
-            echo "直接构建..."
-            npm run docs:build
-          fi
+          echo "=== 开始构建 VitePress ==="
+          
+          # 先预加载 crypto 修复
+          export NODE_OPTIONS="--require ./crypto-polyfill.js"
+          
+          # 执行构建命令
+          echo "执行构建命令: npm run docs:build"
+          npm run docs:build
+          
+          echo "✅ 构建完成"
         env:
-          NODE_OPTIONS: "--require ./fix-crypto.js --max-old-space-size=4096"
+          NODE_OPTIONS: "--require ./crypto-polyfill.js"  # 确保 crypto 修复生效
+          NODE_ENV: "production"  # 设置为生产环境
       
+      # 步骤7: 验证构建结果
       - name: Verify build output
         run: |
-          echo "检查构建输出..."
+          echo "=== 验证构建结果 ==="
+          
+          # 检查构建目录是否存在
           if [ -d "docs/.vitepress/dist" ]; then
-            echo "构建成功！文件列表："
+            echo "✅ 构建目录存在: docs/.vitepress/dist"
+            echo "文件列表:"
             ls -la docs/.vitepress/dist/
-            echo "文件数量："
-            find docs/.vitepress/dist -type f | wc -l
-          elif [ -d ".vitepress/dist" ]; then
-            echo "构建成功！（在根目录）"
-            ls -la .vitepress/dist/
+            echo "HTML 文件:"
+            find docs/.vitepress/dist -name "*.html" | head -5
           else
-            echo "错误：找不到构建输出目录"
-            ls -la docs/ || ls -la ./
-            exit 1
+            echo "❌ 错误: 构建目录不存在"
+            echo "当前目录内容:"
+            ls -la
+            echo "docs 目录内容:"
+            ls -la docs/ || echo "没有 docs 目录"
+            exit 1  # 失败退出
           fi
       
+      # 步骤8: 配置 SSH 部署
       - name: Setup SSH for deployment
         run: |
+          echo "=== 配置 SSH ==="
+          
           mkdir -p ~/.ssh
+          # 从 GitHub Secrets 读取私钥
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # 验证私钥格式
-          ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null || echo "私钥格式检查跳过"
+          echo "私钥已保存，权限已设置"
           
-          # 添加 known_hosts
+          # 验证私钥格式
+          echo "验证私钥格式..."
+          ssh-keygen -l -f ~/.ssh/id_rsa 2>/dev/null && echo "✅ 私钥格式正确" || echo "⚠️  私钥格式检查失败，但继续执行"
+          
+          # 添加服务器到 known_hosts
+          echo "添加服务器到 known_hosts..."
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "✅ SSH 配置完成"
       
+      # 步骤9: 测试 SSH 连接
+      - name: Test SSH connection
+        run: |
+          echo "=== 测试 SSH 连接 ==="
+          
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i ~/.ssh/id_rsa \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "echo '✅ SSH 连接成功！服务器时间: $(date)'" || {
+            echo "❌ SSH 连接失败"
+            exit 1
+          }
+      
+      # 步骤10: 部署到宝塔服务器
       - name: Deploy to Baota Server
         run: |
-          # 确定源目录
-          if [ -d "docs/.vitepress/dist" ]; then
-            SOURCE_DIR="docs/.vitepress/dist/"
-          elif [ -d ".vitepress/dist" ]; then
-            SOURCE_DIR=".vitepress/dist/"
-          else
-            echo "错误：找不到构建输出"
-            exit 1
+          echo "=== 开始部署 ==="
+          
+          # 安装 rsync（如果未安装）
+          echo "检查 rsync..."
+          if ! command -v rsync &> /dev/null; then
+            echo "安装 rsync..."
+            sudo apt-get update && sudo apt-get install -y rsync
           fi
           
-          echo "从目录同步: $SOURCE_DIR"
-          echo "同步到: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_PATH }}"
+          echo "源目录: docs/.vitepress/dist/"
+          echo "目标: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_PATH }}"
           
-          # 使用 rsync 部署
+          # 使用 rsync 同步文件
           rsync -avz \
             --delete \
             --progress \
+            --exclude=".*" \
             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
-            "$SOURCE_DIR" \
+            docs/.vitepress/dist/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_PATH }}
           
           echo "✅ 文件同步完成"
       
+      # 步骤11: 设置宝塔服务器权限
       - name: Set Baota permissions
         run: |
+          echo "=== 设置服务器权限 ==="
+          
           ssh -o StrictHostKeyChecking=no \
               -i ~/.ssh/id_rsa \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
               "chown -R www:www ${{ secrets.TARGET_PATH }} && \
                chmod -R 755 ${{ secrets.TARGET_PATH }} && \
-               echo '权限设置完成'"
+               echo '✅ 权限设置完成: $(ls -ld ${{ secrets.TARGET_PATH }})'"
       
+      # 步骤12: 验证部署结果
       - name: Verify deployment
         run: |
-          echo "验证服务器上的部署..."
+          echo "=== 验证部署结果 ==="
+          
           ssh -o StrictHostKeyChecking=no \
               -i ~/.ssh/id_rsa \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-              "ls -la ${{ secrets.TARGET_PATH }} | head -10 && \
-               echo '部署验证完成！'"
+              "echo '部署验证:' && \
+               echo '目录: ${{ secrets.TARGET_PATH }}' && \
+               echo '所有者:' && ls -ld ${{ secrets.TARGET_PATH }} && \
+               echo '文件数量:' && find ${{ secrets.TARGET_PATH }} -type f | wc -l && \
+               echo '前10个文件:' && ls -la ${{ secrets.TARGET_PATH }} | head -15"
+          
+          echo "🎉 部署流程全部完成！"
